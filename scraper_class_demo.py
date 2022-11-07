@@ -47,5 +47,10 @@ soup = scraper_instance.get_webpage()
 token_data = scraper_instance.process_elements_into_array(soup)
 token_dictionary=scraper_instance.create_list_of_dicts(token_data)
 
+# print an example token from the list, to confirm functionality
 print(token_dictionary[0])
+
+print(token_dictionary[1])
+
+print(token_dictionary[2])
 
