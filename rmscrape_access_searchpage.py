@@ -1,3 +1,4 @@
+#%%
 # import libraries
 from selenium import webdriver 
 from selenium.webdriver.common.keys import Keys
@@ -50,11 +51,16 @@ property_search=GetProperties('mevagissey')
 property_search.get_search_page()
 
 # this code gets me a list of properties
-
-listings_test=property_search.driver.find_elements(by=By.XPATH, value='//a[contains(., "properties")]')
-#listings_test=property_search.driver.find_elements(by=By.XPATH, value='//a')
-# print(len(listings_test))
-# print(listings_test[1])
+#%%
+listings_test=property_search.driver.find_elements(by=By.XPATH, value="//a[contains(@href, 'properties')]")
 links = [elem.get_attribute('href') for elem in listings_test]
+
+property_id_list=[]
 for i in range(len(links)):
-    print(links[i])
+    property_id_list.append ( re.findall(r'\d+',links[i]) )
+
+property_ids=[x for x in property_id_list if len(x) < 2]
+property_ids=set([str(i) for i in property_ids])
+
+print(property_ids)
+# %%
