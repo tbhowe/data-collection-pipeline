@@ -16,6 +16,7 @@ class GetProperties:
         self.min_bedrooms="2"
         self.driver=None
         self.listings_url=None
+        self.property_ids=None
 
     def get_search_page(self):
         self.driver = webdriver.Chrome()
@@ -45,22 +46,35 @@ class GetProperties:
         submit_button.click()
         self.listings_url=self.driver.current_url
         return()
-    
+
+    def return_property_ids(self):
+        listings=self.driver.find_elements(by=By.XPATH, value="//a[contains(@href, 'properties')]")
+        links = [elem.get_attribute('href') for elem in listings] # get hrefs from the <a> tags in listings
+        property_id_list=[]
+        for i in range(len(links)):
+            property_id_list.append ( re.findall(r'\d+',links[i]) ) # make a list of all the numerical parts of each href
+
+        property_ids=[x for x in property_id_list if len(x) < 2] #get rid of instances where there is more than one numeric
+        self.property_ids=set([str(i) for i in property_ids]) # return uniques
+
+
 # RUN CODE
 property_search=GetProperties('mevagissey')
 property_search.get_search_page()
+property_search.return_property_ids()
 
+print(property_search.property_ids)
 # this code gets me a list of properties
-#%%
-listings_test=property_search.driver.find_elements(by=By.XPATH, value="//a[contains(@href, 'properties')]")
-links = [elem.get_attribute('href') for elem in listings_test]
+# #%%
+# listings_test=property_search.driver.find_elements(by=By.XPATH, value="//a[contains(@href, 'properties')]")
+# links = [elem.get_attribute('href') for elem in listings_test]
 
-property_id_list=[]
-for i in range(len(links)):
-    property_id_list.append ( re.findall(r'\d+',links[i]) )
+# property_id_list=[]
+# for i in range(len(links)):
+#     property_id_list.append ( re.findall(r'\d+',links[i]) )
 
-property_ids=[x for x in property_id_list if len(x) < 2]
-property_ids=set([str(i) for i in property_ids])
+# property_ids=[x for x in property_id_list if len(x) < 2]
+# property_ids=set([str(i) for i in property_ids])
 
-print(property_ids)
-# %%
+# print(property_ids)
+# # %%
