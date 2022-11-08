@@ -5,6 +5,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 import re
+from bs4 import BeautifulSoup as bs # import Beautiful Soup
+import requests
 
 class GetProperties:
     def __init__(self,property_area):
@@ -17,6 +19,8 @@ class GetProperties:
         self.driver=None
         self.listings_url=None
         self.property_ids=None
+        self.property_url_base="https://www.rightmove.co.uk/properties/"
+        
 
     def get_search_page(self):
         self.driver = webdriver.Chrome()
@@ -55,7 +59,8 @@ class GetProperties:
             property_id_list.append ( re.findall(r'\d+',links[i]) ) # make a list of all the numerical parts of each href
 
         property_ids=[x for x in property_id_list if len(x) < 2] #get rid of instances where there is more than one numeric
-        self.property_ids=set([str(i) for i in property_ids]) # return uniques
+        self.property_ids=list(set([''.join(i) for i in property_ids]) )# return uniques
+       
 
 
 # RUN CODE
@@ -63,18 +68,23 @@ property_search=GetProperties('mevagissey')
 property_search.get_search_page()
 property_search.return_property_ids()
 
-print(property_search.property_ids)
-# this code gets me a list of properties
-# #%%
-# listings_test=property_search.driver.find_elements(by=By.XPATH, value="//a[contains(@href, 'properties')]")
-# links = [elem.get_attribute('href') for elem in listings_test]
+#%%
+test_prop=str("property-"+property_search.property_ids[1])
+# print(test_prop)
+print(property_search.driver.current_url)
+# test_element=property_search.driver.find_element(by=By.XPATH, value=f'//div[@id={test_prop}]')
+test_element=property_search.driver.find_element(by=By.XPATH, value='//div[@id="property-126356615"]')
+test_price=test_element.find_element(by=By.XPATH, value='//div[@class="propertyCard-priceValue"]' )
+print(test_price.get_attribute('class'))
+print(test_price.get_attribute('text'))
+# %%
+# test_prop_url=str(property_search.property_url_base + property_search.property_ids[1])
+# # property_search.driver.get(test_prop_url)
+# # print(property_search.driver.current_url) # debug line, remove later
+# page = requests.get(test_prop_url)
+# html = page.text # Get the content of the webpage
+# soup = bs(html, 'html.parser') # Convert that into a BeautifulSoup object that contains methods to make the tag searcg easier
+# test=soup.find_all("span")
+# print(test)
 
-# property_id_list=[]
-# for i in range(len(links)):
-#     property_id_list.append ( re.findall(r'\d+',links[i]) )
-
-# property_ids=[x for x in property_id_list if len(x) < 2]
-# property_ids=set([str(i) for i in property_ids])
-
-# print(property_ids)
-# # %%
+# %%
