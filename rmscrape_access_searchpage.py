@@ -68,7 +68,7 @@ property_search=GetProperties('mevagissey')
 property_search.get_search_page()
 property_search.return_property_ids()
 
-#%%
+# BELOW THIS LINE IS HACKY SCRIPT!
 test_prop=str("property-"+property_search.property_ids[1])
 # print(test_prop)
 print(property_search.driver.current_url)
