@@ -78,13 +78,6 @@ test_price=test_element.find_element(by=By.XPATH, value='//div[@class="propertyC
 print(test_price.get_attribute('class'))
 print(test_price.get_attribute('text'))
 # %%
-# test_prop_url=str(property_search.property_url_base + property_search.property_ids[1])
-# # property_search.driver.get(test_prop_url)
-# # print(property_search.driver.current_url) # debug line, remove later
-# page = requests.get(test_prop_url)
-# html = page.text # Get the content of the webpage
-# soup = bs(html, 'html.parser') # Convert that into a BeautifulSoup object that contains methods to make the tag searcg easier
-# test=soup.find_all("span")
-# print(test)
+
 
 # %%
