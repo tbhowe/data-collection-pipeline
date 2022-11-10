@@ -4,10 +4,17 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
+
 import re
 from bs4 import BeautifulSoup as bs # import Beautiful Soup
 import requests
 import json
+import time
 
 class GetProperties:
     def __init__(self,property_area):
@@ -27,6 +34,7 @@ class GetProperties:
     def get_search_page(self):
         self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
+        time.sleep(1)
 
         # finds the inputfield on the front page!
         search_box_path = self.driver.find_element(by=By.XPATH, value='//*[@name="typeAheadInputField"]')
@@ -83,22 +91,42 @@ class GetProperties:
         print( "navigating to: " + str(self.driver.current_url))
         return()
 
+    def accept_cookies(self):
+        # driver=self.driver
+        delay = 10
+        try:
+            WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
+            print("cookiebox Ready!")
+            
+            try:
+                # self.driver.switch_to.alert('gdpr-consent-notice')
+                accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]')
+                
+                print(accept_cookies_button.get_attribute("class"))
+                # accept_cookies_button.click()
+                WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]')))
+                accept_cookies_button.click()
+                time.sleep(1)
+            except NoSuchElementException:
+                print("box isn't there")
+            
+        except TimeoutException:
+            print("Loading took too much time!")
+            return()
+        
+        
 
 # RUN CODE
 property_search=GetProperties('mevagissey')
 property_search.get_search_page()
 property_search.return_properties()
-
-#%%
-#This will be a loop soon!
 prop_ID=property_search.property_info[1]["id"]
 property_search.nav_to_property_page(prop_ID)
+property_search.accept_cookies()
 
-# test_xpath=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/article[1]/div/div/div[1]/span[1]')
-# print(test_xpath.text)
-price_history_button=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/button')
-price_history_button.click()
-price_history_div=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/div/div[2]/table/tbody')
+# price_history_button=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/button')
+# price_history_button.click()
+# price_history_div=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/div/div[2]/table/tbody')
 
 
 # %%
