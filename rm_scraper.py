@@ -76,7 +76,7 @@ class GetProperties:
         self.listings_url=self.driver.current_url
         return()
 
- # Function to acquire basid info regarding the properties on the search page
+    # Function to acquire basid info regarding the properties on the search page, and store them in a dictionary
     def return_properties(self):
         r = requests.get(self.listings_url)
         if r.status_code == 200: # checks request completed successfully
@@ -103,11 +103,13 @@ class GetProperties:
             self.property_info=properties_dict
         return()
 
+    # Function for navigating to the page of an individual property
     def nav_to_property_page(self,prop_ID):
         self.driver.get(self.property_url_base + str(prop_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
 
+    # Function to accept cookies on individual property page
     def accept_cookies(self):
 
         delay = 5
@@ -128,6 +130,7 @@ class GetProperties:
             print("No GDPR cookie box appeared!")
             return()
     
+    # Function to scrape the price history from a property page
     def get_price_history(self,prop_elem):
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
@@ -146,6 +149,7 @@ class GetProperties:
                 print('no sale price history')
         return()
     
+    # Function to navigate to an individual property page, and get the property image and price history.
     def get_expanded_property_data(self):
 
         print( 'properties found: ' + str(len(self.property_info )))
@@ -190,24 +194,7 @@ class GetProperties:
 property_search=GetProperties('mevagissey')
 
 print(property_search.property_info[4])
-#%%
-# prop_ID=property_search.property_info[1]["id"]
-# property_search.nav_to_property_page(prop_ID)
-# property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
-# time.sleep(2)
-# first_image_url=property_search.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
-# print(first_image_url)
-# image_data = requests.get(first_image_url, stream = True)
-# image_file_name=str("property_"+ str(prop_ID)+".jpeg")
-# if image_data.status_code == 200:
-#     with open(image_file_name,'wb') as f:
-#         shutil.copyfileobj(image_data.raw, f)
-#     print('Image sucessfully Downloaded: ', image_file_name)
-# else:
-#     print('Image Couldn\'t be retrieved')
 
-
-# first_image=image_carousel.find_element(by=By.XPATH, value='//meta')
 
 
 #%%
