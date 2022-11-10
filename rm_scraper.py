@@ -11,11 +11,11 @@ from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 
 import re
-from bs4 import BeautifulSoup as bs # import Beautiful Soup
+# from bs4 import BeautifulSoup as bs # import Beautiful Soup - no longer needed. Delete later.
 import requests
 import json
 import time
-import geopy
+# import geopy - will need this for a later method.
 
 class GetProperties:
     def __init__(self,property_area):
@@ -30,6 +30,14 @@ class GetProperties:
         self.property_ids=None
         self.property_info=None
         self.property_url_base="https://www.rightmove.co.uk/properties/"
+        
+        if __name__ == "__main__" :
+            self.get_search_page()
+            self.return_properties()
+            self.get_expanded_property_data()
+            pass
+        else:
+            pass
         
 
     def get_search_page(self):
@@ -94,7 +102,7 @@ class GetProperties:
 
     def accept_cookies(self):
         # driver=self.driver
-        delay = 10
+        delay = 5
         try:
             WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
             print("cookiebox Ready!")
@@ -102,23 +110,23 @@ class GetProperties:
             try:
                 # self.driver.switch_to.alert('//*[@class="optanon-alert-box-wrapper  "]') # throws noAlertPresent exception
                 accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]') # finds accept cookies button
-                print(accept_cookies_button.get_attribute("class")) # proves correct element selected
+                #print(accept_cookies_button.get_attribute("class")) # proves correct element selected
                 # accept_cookies_button.click() # this fails - ElementClickInterceptedException
                 WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]'))) # wait until clickable
                 # accept_cookies_button.click() # still fails with ElementClickInterceptedException
-                driver.execute_script("arguments[0].click();", accept_cookies_button)
+                self.driver.execute_script("arguments[0].click();", accept_cookies_button)
                 time.sleep(1)
             except NoSuchElementException:
-                print("box isn't there")
+                print("cookie button not present")
             
         except TimeoutException:
-            print("Loading took too much time!")
+            print("No GDPR cookie box appeared!")
             return()
     
     def get_price_history(self,prop_elem):
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/button')
         price_history_button.click()
-        time.sleep(2)
+        time.sleep(4)
         try:
             price_history_table=self.driver.find_element(by=By.TAG_NAME, value='table')
             # handle exception - NoSuchElementException 
@@ -131,20 +139,24 @@ class GetProperties:
         except NoSuchElementException:
                 print('no sale price history')
         return()
-        
+    
+    def get_expanded_property_data(self):
+        print( 'properties found: ' + str(len(self.property_info )))
+        for property_number in range(len(self.property_info )):
+            print('extracting more data for property: '+ str(property_number))
+            prop_ID=self.property_info[property_number]["id"]
+            print('property ID: ' + str(prop_ID))
+            self.nav_to_property_page(prop_ID)
+            # self.accept_cookies()
+            self.get_price_history(property_number)
+            time.sleep(2)
+        return()
 
 # RUN CODE
 property_search=GetProperties('mevagissey')
-property_search.get_search_page()
-property_search.return_properties()
-print(len(property_search.property_info ))
-for property_number in range(len(property_search.property_info )):
-    print(property_number)
-    prop_ID=property_search.property_info[property_number]["id"]
-    print(prop_ID)
-    property_search.nav_to_property_page(prop_ID)
-    property_search.get_price_history(property_number)
-    time.sleep(2)
+# property_search.get_search_page()
+# property_search.return_properties()
+# property_search.get_expanded_property_data()
 
 
 #%%
