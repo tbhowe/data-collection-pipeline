@@ -124,7 +124,7 @@ class GetProperties:
             return()
     
     def get_price_history(self,prop_elem):
-        price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/button')
+        price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
         time.sleep(4)
         try:
