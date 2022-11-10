@@ -10,16 +10,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 
-import re
+# import re
 # from bs4 import BeautifulSoup as bs # import Beautiful Soup - no longer needed. Delete later.
 import requests
 import shutil
 import json
 import time
+import os
+import datetime
 # import geopy - will need this for a later method.
 
 class GetProperties:
     def __init__(self,property_area):
+
         self.property_area=property_area
         self.base_url="https://www.rightmove.co.uk/"
         self.min_price="200,000"
@@ -42,6 +45,7 @@ class GetProperties:
         
 
     def get_search_page(self):
+
         self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
         time.sleep(1)
@@ -59,6 +63,7 @@ class GetProperties:
         max_price_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="maxPrice"]'))
         property_type_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="displayPropertyType"]'))
         min_bedrooms_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="minBedrooms"]'))
+
         # select by visible text
         min_price_dropdown.select_by_visible_text(self.min_price)
         max_price_dropdown.select_by_visible_text(self.max_price)
@@ -86,6 +91,7 @@ class GetProperties:
             data = json.loads(data_str)
             property_array = data['properties']
             properties_dict=[]
+
             for entry in property_array:
                 id = entry['id']
                 price = entry['price']['amount']
@@ -93,6 +99,7 @@ class GetProperties:
                 bathrooms=entry['bathrooms']
                 location=entry['location']
                 properties_dict.append({ "id" : id, "price" : price , "bedrooms" : bedrooms, "bathrooms" : bathrooms, "location" : location})
+
             self.property_info=properties_dict
         return()
 
@@ -102,7 +109,9 @@ class GetProperties:
         return()
 
     def accept_cookies(self):
+
         delay = 5
+
         try:
             WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
             print("cookiebox Ready!")
@@ -122,7 +131,9 @@ class GetProperties:
     def get_price_history(self,prop_elem):
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
+
         time.sleep(4)
+
         try:
             price_history_table=self.driver.find_element(by=By.TAG_NAME, value='table') 
             price_history=[]
@@ -130,41 +141,70 @@ class GetProperties:
             for row in price_history_table.find_elements(by=By.CSS_SELECTOR, value='tr')[1:]:
                 price_history_element=row.find_elements(by=By.TAG_NAME, value='td')
                 price_history.append({price_history_element[0].text : price_history_element[1].text})
-            self.property_info[3]['price_history']= price_history
+            self.property_info[prop_elem]['price_history']= price_history
         except NoSuchElementException:
                 print('no sale price history')
         return()
     
     def get_expanded_property_data(self):
+
         print( 'properties found: ' + str(len(self.property_info )))
-        for property_number in range(0,4): #(len(self.property_info )):
+
+        for property_number in range(len(self.property_info )):
             print('extracting more data for property: '+ str(property_number))
             prop_ID=self.property_info[property_number]["id"]
             print('property ID: ' + str(prop_ID))
             self.nav_to_property_page(prop_ID)
             self.get_price_history(property_number)
-            time.sleep(1)
+            self.get_property_images(prop_ID,property_number)
         return()
+
     # def get_property_image(self):
+    def get_property_images(self,prop_ID,prop_elem):
+
+        self.nav_to_property_page(prop_ID)
+        self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
+        time.sleep(2)
+        first_image_url=self.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
+        print(first_image_url)
+        self.property_info[prop_elem]['image_url']= first_image_url
+        self.property_info[prop_elem]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
+        image_data = requests.get(first_image_url, stream = True)
+
+        if os.path.exists("~/property_images/")==False:
+            os.makedirs("~/property_images/")
+
+        image_file_name=str("~/property_images/property_" + str(prop_ID) + ".jpeg")
+        
+
+        if image_data.status_code == 200:
+            with open(image_file_name,'wb') as f:
+                shutil.copyfileobj(image_data.raw, f)
+            print('Image sucessfully Downloaded: ', image_file_name)
+        else:
+            print('Image Couldn\'t be retrieved')
+        return()
+
 
 # RUN CODE
 property_search=GetProperties('mevagissey')
 
+print(property_search.property_info[4])
 #%%
-prop_ID=property_search.property_info[1]["id"]
-property_search.nav_to_property_page(prop_ID)
-property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
-time.sleep(2)
-first_image_url=property_search.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
-print(first_image_url)
-image_data = requests.get(first_image_url, stream = True)
-image_file_name=str("property_"+ str(prop_ID)+".jpeg")
-if image_data.status_code == 200:
-    with open(image_file_name,'wb') as f:
-        shutil.copyfileobj(image_data.raw, f)
-    print('Image sucessfully Downloaded: ', image_file_name)
-else:
-    print('Image Couldn\'t be retrieved')
+# prop_ID=property_search.property_info[1]["id"]
+# property_search.nav_to_property_page(prop_ID)
+# property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
+# time.sleep(2)
+# first_image_url=property_search.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
+# print(first_image_url)
+# image_data = requests.get(first_image_url, stream = True)
+# image_file_name=str("property_"+ str(prop_ID)+".jpeg")
+# if image_data.status_code == 200:
+#     with open(image_file_name,'wb') as f:
+#         shutil.copyfileobj(image_data.raw, f)
+#     print('Image sucessfully Downloaded: ', image_file_name)
+# else:
+#     print('Image Couldn\'t be retrieved')
 
 
 # first_image=image_carousel.find_element(by=By.XPATH, value='//meta')
