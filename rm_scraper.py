@@ -13,6 +13,7 @@ from selenium.common.exceptions import NoSuchElementException
 import re
 # from bs4 import BeautifulSoup as bs # import Beautiful Soup - no longer needed. Delete later.
 import requests
+import shutil
 import json
 import time
 # import geopy - will need this for a later method.
@@ -73,18 +74,18 @@ class GetProperties:
  # Function to acquire basid info regarding the properties on the search page
     def return_properties(self):
         r = requests.get(self.listings_url)
-        if r.status_code == 200:
+        if r.status_code == 200: # checks request completed successfully
+
+            # This code parses the json on each property page and stores the infromation in a list of dictionaries
             search_term = '<script>window.jsonModel = '
             body = r.content.decode('utf-8')
             left_idx = body.find(search_term)
             right_idx = body.find('</script>', left_idx)
             offset = len(search_term)
             data_str = body[left_idx + offset:right_idx]
-            # data holds the 'data model' of the page. All of the info to populate the "property card is in there"
             data = json.loads(data_str)
             property_array = data['properties']
             properties_dict=[]
-            counter=0
             for entry in property_array:
                 id = entry['id']
                 price = entry['price']['amount']
@@ -101,19 +102,14 @@ class GetProperties:
         return()
 
     def accept_cookies(self):
-        # driver=self.driver
         delay = 5
         try:
             WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
             print("cookiebox Ready!")
             
             try:
-                # self.driver.switch_to.alert('//*[@class="optanon-alert-box-wrapper  "]') # throws noAlertPresent exception
                 accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]') # finds accept cookies button
-                #print(accept_cookies_button.get_attribute("class")) # proves correct element selected
-                # accept_cookies_button.click() # this fails - ElementClickInterceptedException
                 WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]'))) # wait until clickable
-                # accept_cookies_button.click() # still fails with ElementClickInterceptedException
                 self.driver.execute_script("arguments[0].click();", accept_cookies_button)
                 time.sleep(1)
             except NoSuchElementException:
@@ -128,8 +124,7 @@ class GetProperties:
         price_history_button.click()
         time.sleep(4)
         try:
-            price_history_table=self.driver.find_element(by=By.TAG_NAME, value='table')
-            # handle exception - NoSuchElementException 
+            price_history_table=self.driver.find_element(by=By.TAG_NAME, value='table') 
             price_history=[]
         
             for row in price_history_table.find_elements(by=By.CSS_SELECTOR, value='tr')[1:]:
@@ -142,21 +137,37 @@ class GetProperties:
     
     def get_expanded_property_data(self):
         print( 'properties found: ' + str(len(self.property_info )))
-        for property_number in range(len(self.property_info )):
+        for property_number in range(0,4): #(len(self.property_info )):
             print('extracting more data for property: '+ str(property_number))
             prop_ID=self.property_info[property_number]["id"]
             print('property ID: ' + str(prop_ID))
             self.nav_to_property_page(prop_ID)
-            # self.accept_cookies()
             self.get_price_history(property_number)
-            time.sleep(2)
+            time.sleep(1)
         return()
+    # def get_property_image(self):
 
 # RUN CODE
 property_search=GetProperties('mevagissey')
-# property_search.get_search_page()
-# property_search.return_properties()
-# property_search.get_expanded_property_data()
+
+#%%
+prop_ID=property_search.property_info[1]["id"]
+property_search.nav_to_property_page(prop_ID)
+property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
+time.sleep(2)
+first_image_url=property_search.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
+print(first_image_url)
+image_data = requests.get(first_image_url, stream = True)
+image_file_name=str("property_"+ str(prop_ID)+".jpeg")
+if image_data.status_code == 200:
+    with open(image_file_name,'wb') as f:
+        shutil.copyfileobj(image_data.raw, f)
+    print('Image sucessfully Downloaded: ', image_file_name)
+else:
+    print('Image Couldn\'t be retrieved')
+
+
+# first_image=image_carousel.find_element(by=By.XPATH, value='//meta')
 
 
 #%%
