@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup as bs # import Beautiful Soup
 import requests
 import json
 import time
+import geopy
 
 class GetProperties:
     def __init__(self,property_area):
@@ -99,13 +100,13 @@ class GetProperties:
             print("cookiebox Ready!")
             
             try:
-                # self.driver.switch_to.alert('gdpr-consent-notice')
+                # self.driver.switch_to.alert('//*[@class="optanon-alert-box-wrapper  "]') # throws noAlertPresent exception
                 accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]') # finds accept cookies button
-                
                 print(accept_cookies_button.get_attribute("class")) # proves correct element selected
                 # accept_cookies_button.click() # this fails - ElementClickInterceptedException
                 WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]'))) # wait until clickable
-                accept_cookies_button.click() # still fails with ElementClickInterceptedException
+                # accept_cookies_button.click() # still fails with ElementClickInterceptedException
+                driver.execute_script("arguments[0].click();", accept_cookies_button)
                 time.sleep(1)
             except NoSuchElementException:
                 print("box isn't there")
@@ -113,20 +114,40 @@ class GetProperties:
         except TimeoutException:
             print("Loading took too much time!")
             return()
+    
+    def get_price_history(self,prop_elem):
+        price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/button')
+        price_history_button.click()
+        time.sleep(2)
+        try:
+            price_history_table=self.driver.find_element(by=By.TAG_NAME, value='table')
+            # handle exception - NoSuchElementException 
+            price_history=[]
         
+            for row in price_history_table.find_elements(by=By.CSS_SELECTOR, value='tr')[1:]:
+                price_history_element=row.find_elements(by=By.TAG_NAME, value='td')
+                price_history.append({price_history_element[0].text : price_history_element[1].text})
+            self.property_info[3]['price_history']= price_history
+        except NoSuchElementException:
+                print('no sale price history')
+        return()
         
 
 # RUN CODE
 property_search=GetProperties('mevagissey')
 property_search.get_search_page()
 property_search.return_properties()
-prop_ID=property_search.property_info[1]["id"]
-property_search.nav_to_property_page(prop_ID)
-property_search.accept_cookies()
+print(len(property_search.property_info ))
+for property_number in range(len(property_search.property_info )):
+    print(property_number)
+    prop_ID=property_search.property_info[property_number]["id"]
+    print(prop_ID)
+    property_search.nav_to_property_page(prop_ID)
+    property_search.get_price_history(property_number)
+    time.sleep(2)
 
-# price_history_button=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/button')
-# price_history_button.click()
-# price_history_div=property_search.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[13]/div/div[2]/table/tbody')
+
+#%%
 
 
-# %%
+
