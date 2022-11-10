@@ -100,12 +100,12 @@ class GetProperties:
             
             try:
                 # self.driver.switch_to.alert('gdpr-consent-notice')
-                accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]')
+                accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]') # finds accept cookies button
                 
-                print(accept_cookies_button.get_attribute("class"))
-                # accept_cookies_button.click()
-                WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]')))
-                accept_cookies_button.click()
+                print(accept_cookies_button.get_attribute("class")) # proves correct element selected
+                # accept_cookies_button.click() # this fails - ElementClickInterceptedException
+                WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]'))) # wait until clickable
+                accept_cookies_button.click() # still fails with ElementClickInterceptedException
                 time.sleep(1)
             except NoSuchElementException:
                 print("box isn't there")
