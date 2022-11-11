@@ -37,7 +37,6 @@ class GetProperties:
                 'property_type' : 'Houses',
                 'min_bedrooms' : 2,
                 }
-        
         self.driver=None
         self.listings_url=None
         self.property_ids=None
