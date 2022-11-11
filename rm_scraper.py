@@ -21,19 +21,28 @@ import datetime
 # import geopy - will need this for a later method.
 
 class GetProperties:
-    def __init__(self,property_area):
+
+    def __init__(self, property_area,**kwargs): 
+        # required: property_area (string) - place or postcode of search area
+        #optional: opts (dict with elements: min_price, max_price, property_type, min_bedrooms )
 
         self.property_area=property_area
-        self.base_url="https://www.rightmove.co.uk/"
-        self.min_price="200,000"
-        self.max_price="700,000"
-        self.property_type='Houses'
-        self.min_bedrooms="2"
+        self.property_url_base='https://www.rightmove.co.uk/properties/'
+        self.base_url='https://www.rightmove.co.uk/'
+        if kwargs.get('opts'):
+            self.opts=kwargs.get('opts')
+        else:
+            self.opts={'min_price' :'200,000', 
+                'max_price' : '700,000',
+                'property_type' : 'Houses',
+                'min_bedrooms' : 2,
+                }
+        
         self.driver=None
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
-        self.property_url_base="https://www.rightmove.co.uk/properties/"
+        
         
         if __name__ == "__main__" :
             self.get_search_page()
@@ -53,7 +62,7 @@ class GetProperties:
         # finds the inputfield on the front page!
         search_box_path = self.driver.find_element(by=By.XPATH, value='//*[@name="typeAheadInputField"]')
         # finds the for sale button
-        for_sale_button_path =self.driver.find_element(by=By.XPATH,value='//*[@id="_3OuiRnbltQyS534SB4ivLV"]')
+        # for_sale_button_path =self.driver.find_element(by=By.XPATH,value='//*[@id="_3OuiRnbltQyS534SB4ivLV"]')
         #fill in search box
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
@@ -65,10 +74,10 @@ class GetProperties:
         min_bedrooms_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="minBedrooms"]'))
 
         # select by visible text
-        min_price_dropdown.select_by_visible_text(self.min_price)
-        max_price_dropdown.select_by_visible_text(self.max_price)
-        property_type_dropdown.select_by_visible_text(self.property_type)
-        min_bedrooms_dropdown.select_by_visible_text(self.min_bedrooms)
+        min_price_dropdown.select_by_visible_text(self.opts['min_price'])
+        max_price_dropdown.select_by_visible_text(self.opts['max_price'])
+        property_type_dropdown.select_by_visible_text(self.opts['property_type'])
+        min_bedrooms_dropdown.select_by_visible_text(self.opts['min_bedrooms'])
 
         # find submit button
         submit_button=self.driver.find_element(by=By.XPATH, value='//*[@id="submit"]')
@@ -104,8 +113,8 @@ class GetProperties:
         return()
 
     # Function for navigating to the page of an individual property
-    def nav_to_property_page(self,prop_ID):
-        self.driver.get(self.property_url_base + str(prop_ID) )
+    def nav_to_property_page(self,property_ID):
+        self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
 
@@ -131,7 +140,7 @@ class GetProperties:
             return()
     
     # Function to scrape the price history from a property page
-    def get_price_history(self,prop_elem):
+    def get_price_history(self,list_index):
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
 
@@ -144,7 +153,9 @@ class GetProperties:
             for row in price_history_table.find_elements(by=By.CSS_SELECTOR, value='tr')[1:]:
                 price_history_element=row.find_elements(by=By.TAG_NAME, value='td')
                 price_history.append({price_history_element[0].text : price_history_element[1].text})
-            self.property_info[prop_elem]['price_history']= price_history
+
+            self.property_info[list_index]['price_history']= price_history
+
         except NoSuchElementException:
                 print('no sale price history')
         return()
@@ -155,30 +166,32 @@ class GetProperties:
         print( 'properties found: ' + str(len(self.property_info )))
 
         for property_number in range(len(self.property_info )):
+
             print('extracting more data for property: '+ str(property_number))
-            prop_ID=self.property_info[property_number]["id"]
-            print('property ID: ' + str(prop_ID))
-            self.nav_to_property_page(prop_ID)
+            property_ID=self.property_info[property_number]["id"]
+            print('property ID: ' + str(property_ID))
+            self.nav_to_property_page(property_ID)
             self.get_price_history(property_number)
-            self.get_property_images(prop_ID,property_number)
+            self.get_property_images(property_ID,property_number)
+
         return()
 
     # def get_property_image(self):
-    def get_property_images(self,prop_ID,prop_elem):
+    def get_property_images(self,property_ID,list_index):
 
-        self.nav_to_property_page(prop_ID)
+        self.nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
         time.sleep(2)
         first_image_url=self.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
         print(first_image_url)
-        self.property_info[prop_elem]['image_url']= first_image_url
-        self.property_info[prop_elem]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
+        self.property_info[list_index]['image_url']= first_image_url
+        self.property_info[list_index]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
         image_data = requests.get(first_image_url, stream = True)
 
         if os.path.exists("~/property_images/")==False:
             os.makedirs("~/property_images/")
 
-        image_file_name=str("~/property_images/property_" + str(prop_ID) + ".jpeg")
+        image_file_name=str("~/property_images/property_" + str(property_ID) + ".jpeg")
         
 
         if image_data.status_code == 200:
@@ -189,9 +202,27 @@ class GetProperties:
             print('Image Couldn\'t be retrieved')
         return()
 
-
+opts={'min_price' :'200,000', 
+    'max_price' : '700,000',
+    'property_type' : 'Houses',
+    'min_bedrooms' : 2,
+    }
 # RUN CODE
-property_search=GetProperties('mevagissey')
+property_search=GetProperties('mevagissey',opts)
+# %%
+
+# self.property_area=property_area
+#         self.base_url="https://www.rightmove.co.uk/"
+#         self.min_price="200,000"
+#         self.max_price="700,000"
+#         self.property_type='Houses'
+#         self.min_bedrooms="2"
+#         self.driver=None
+#         self.listings_url=None
+#         self.property_ids=None
+#         self.property_info=None
+#         self.property_url_base="https://www.rightmove.co.uk/properties/"
+
 
 print(property_search.property_info[4])
 
