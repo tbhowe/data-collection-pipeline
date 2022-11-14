@@ -1,21 +1,23 @@
 #%%
 # import libraries
+from geopy.geocoders import Nominatim
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException
-from selenium.common.exceptions import NoSuchElementException
 
-
+import datetime
+import json
+import os
 import requests
 import shutil
-import json
 import time
-import os
-import datetime
+
+
 
 # import geopy - will need this for a later method.
 
@@ -66,22 +68,21 @@ class GetProperties:
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
         # finds the inputfields - TIDY THIS INTO LOOP when sorted
-        min_price_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="minPrice"]'))
-        max_price_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="maxPrice"]'))
-        property_type_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="displayPropertyType"]'))
-        min_bedrooms_dropdown = Select(self.driver.find_element(by=By.XPATH, value='//*[@name="minBedrooms"]'))
-        # select by visible text
-        min_price_dropdown.select_by_visible_text(self.opts['min_price'])
-        max_price_dropdown.select_by_visible_text(self.opts['max_price'])
-        property_type_dropdown.select_by_visible_text(self.opts['property_type'])
-        min_bedrooms_dropdown.select_by_visible_text(self.opts['min_bedrooms'])
-        # find submit button
-        submit_button=self.driver.find_element(by=By.XPATH, value='//*[@id="submit"]')
-        submit_button.click()
+        self.find_and_fill_webform()
         self.listings_url=self.driver.current_url
-        
 
-    # Function to acquire basid info regarding the properties on the search page, and store them in a dictionary
+    def find_and_fill_webform(self):
+        data_names={'min_price': "minPrice", 
+                    "max_price": "maxPrice", 
+                    "property_type": "displayPropertyType", 
+                    "min_bedrooms": "minBedrooms"
+                    }
+        for field_element in data_names.keys():
+            print(data_names[field_element])
+            Select(self.driver.find_element(by=By.XPATH, value="//*[@name='" +data_names[field_element]+"']")).select_by_visible_text(self.opts[field_element])
+
+        self.driver.find_element(by=By.XPATH, value='//*[@id="submit"]').click()
+        
     def return_properties(self):
         r = requests.get(self.listings_url)
         if r.status_code == 200: # checks request completed successfully
@@ -91,8 +92,8 @@ class GetProperties:
             left_idx = body.find(search_term)
             right_idx = body.find('</script>', left_idx)
             offset = len(search_term)
-            data_str = body[left_idx + offset:right_idx]
-            data = json.loads(data_str)
+            data_string = body[left_idx + offset:right_idx]
+            data = json.loads(data_string)
             property_array = data['properties']
             properties_dict=[]
             for entry in property_array:
@@ -104,6 +105,18 @@ class GetProperties:
                 properties_dict.append({ "id" : id, "price" : price , "bedrooms" : bedrooms, "bathrooms" : bathrooms, "location" : location})
 
             self.property_info=properties_dict
+
+        # Function to navigate to an individual property page, and get the property image and price history.
+    def get_expanded_property_data(self):
+        print( 'properties found: ' + str(len(self.property_info )))
+        for property_number in range(len(self.property_info )):
+            print('extracting more data for property: '+ str(property_number))
+            property_ID=self.property_info[property_number]["id"]
+            # self.accept_cookies()
+            self.nav_to_property_page(property_ID)
+            self.get_price_history(property_number)
+            self.reverse_geocode_address(property_number)
+            self.get_property_images(property_ID,property_number)
 
     # Function for navigating to the page of an individual property
     def nav_to_property_page(self,property_ID):
@@ -129,7 +142,6 @@ class GetProperties:
         except TimeoutException:
             print("No GDPR cookie box appeared!")
     
-    
     # Function to scrape the price history from a property page
     def get_price_history(self,list_index):
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
@@ -147,20 +159,13 @@ class GetProperties:
 
         except NoSuchElementException:
                 print('no sale price history')
-        
     
-    # Function to navigate to an individual property page, and get the property image and price history.
-    def get_expanded_property_data(self):
-        print( 'properties found: ' + str(len(self.property_info )))
-        for property_number in range(4): # range(len(self.property_info )):
-            print('extracting more data for property: '+ str(property_number))
-            property_ID=self.property_info[property_number]["id"]
-            print('property ID: ' + str(property_ID))
-            self.nav_to_property_page(property_ID)
-            self.get_price_history(property_number)
-            self.get_property_images(property_ID,property_number)
+    def reverse_geocode_address(self,property_number):
+        locator = Nominatim(user_agent='OSM')
+        coordinates = str(self.property_info[property_number]["location"]["latitude"]) +','+str(self.property_info[property_number]["location"]["longitude"])
+        location = locator.reverse(coordinates)
+        self.property_info[property_number]["address"]=location.address
 
-    # def get_property_image(self):
     def get_property_images(self,property_ID,list_index):
         self.nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
