@@ -14,7 +14,9 @@ import json
 import time
 import os
 import datetime
+import pickle
 # import geopy - will need this for a later method.
+
 
 class GetProperties:
 
@@ -49,6 +51,7 @@ class GetProperties:
             self.get_search_page()
             self.return_properties()
             self.get_expanded_property_data()
+            self.save_property_data()
 
         
 
@@ -177,6 +180,20 @@ class GetProperties:
 
         else:
             print('Image Couldn\'t be retrieved')
+    
+    def save_property_data(self):
+
+        if os.path.exists("~/property_images/")==False:
+            os.makedirs("~/property_images/")
+
+        for property_number in range(len(self.property_info )):
+            property_ID=self.property_info[property_number]["id"]
+            dict_file_name=str("~/property_data/property_" + str(property_ID) + ".pkl")
+            with open(dict_file_name, 'wb+') as f:
+                pickle.dump(self.property_info[property_number], f)
+            
+    
+
 
 # RUN CODE
 
