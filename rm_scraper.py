@@ -60,6 +60,7 @@ class GetProperties:
         
 
     def get_search_page(self):
+        '''Method to open the search page on rightmove.co.uk '''
         self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
         time.sleep(1)
@@ -72,6 +73,7 @@ class GetProperties:
         self.listings_url=self.driver.current_url
 
     def find_and_fill_webform(self):
+        '''Method to fill in the property search form on rightmove.co.uk '''
         data_names={'min_price': "minPrice", 
                     "max_price": "maxPrice", 
                     "property_type": "displayPropertyType", 
@@ -84,6 +86,7 @@ class GetProperties:
         self.driver.find_element(by=By.XPATH, value='//*[@id="submit"]').click()
         
     def return_properties(self):
+        '''Method to collect the property listings from the search page on rightmove.co.uk '''
         r = requests.get(self.listings_url)
         if r.status_code == 200: # checks request completed successfully
             # This code parses the json on each property page and stores the infromation in a list of dictionaries
@@ -106,8 +109,9 @@ class GetProperties:
 
             self.property_info=properties_dict
 
-        # Function to navigate to an individual property page, and get the property image and price history.
+        
     def get_expanded_property_data(self):
+        '''Method to scrape additional data from the individual propety pages. '''
         print( 'properties found: ' + str(len(self.property_info )))
         for property_number in range(len(self.property_info )):
             print('extracting more data for property: '+ str(property_number))
@@ -118,14 +122,16 @@ class GetProperties:
             self.reverse_geocode_address(property_number)
             self.get_property_images(property_ID,property_number)
 
-    # Function for navigating to the page of an individual property
+    
     def nav_to_property_page(self,property_ID):
+        '''Method to navigate to an individual property's url, given its ID '''
         self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
 
-    # Function to accept cookies on individual property page
+    
     def accept_cookies(self):
+        '''Method to accept the GFPR cookies on an individual property page '''
         delay = 5
         try:
             WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
@@ -142,8 +148,10 @@ class GetProperties:
         except TimeoutException:
             print("No GDPR cookie box appeared!")
     
-    # Function to scrape the price history from a property page
+    
+    
     def get_price_history(self,list_index):
+        '''Method to accept the price history from an individual property page '''
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
         time.sleep(4)
@@ -161,12 +169,14 @@ class GetProperties:
                 print('no sale price history')
     
     def reverse_geocode_address(self,property_number):
+        '''Method to retrieve postal address from Lat and Long data '''
         locator = Nominatim(user_agent='OSM')
         coordinates = str(self.property_info[property_number]["location"]["latitude"]) +','+str(self.property_info[property_number]["location"]["longitude"])
         location = locator.reverse(coordinates)
         self.property_info[property_number]["address"]=location.address
 
     def get_property_images(self,property_ID,list_index):
+        '''Method to retrieve the first image associated with each property listing '''
         self.nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
         time.sleep(2)
@@ -189,6 +199,7 @@ class GetProperties:
             print('Image Couldn\'t be retrieved')
     
     def save_property_data(self):
+        '''Method to save the scraped data dictionary for each property as a .json '''
 
         if os.path.exists("raw_data/property_data/")==False:
             os.makedirs("raw_data/property_data/")
