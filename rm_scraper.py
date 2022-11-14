@@ -8,13 +8,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
+
+
 import requests
 import shutil
 import json
 import time
 import os
 import datetime
-import pickle
+
 # import geopy - will need this for a later method.
 
 
@@ -150,7 +152,7 @@ class GetProperties:
     # Function to navigate to an individual property page, and get the property image and price history.
     def get_expanded_property_data(self):
         print( 'properties found: ' + str(len(self.property_info )))
-        for property_number in range(len(self.property_info )):
+        for property_number in range(4): # range(len(self.property_info )):
             print('extracting more data for property: '+ str(property_number))
             property_ID=self.property_info[property_number]["id"]
             print('property ID: ' + str(property_ID))
@@ -168,10 +170,10 @@ class GetProperties:
         self.property_info[list_index]['image_url']= first_image_url
         self.property_info[list_index]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
         image_data = requests.get(first_image_url, stream = True)
-        if os.path.exists("~/property_images/")==False:
-            os.makedirs("~/property_images/")
+        if os.path.exists("raw_data/property_images/")==False:
+            os.makedirs("raw_data/property_images/")
 
-        image_file_name=str("~/property_images/property_" + str(property_ID) + ".jpeg")
+        image_file_name=str("raw_data/property_images/property_" + str(property_ID) + ".jpeg")
         if image_data.status_code == 200:
             with open(image_file_name,'wb') as f:
                 shutil.copyfileobj(image_data.raw, f)
@@ -183,14 +185,14 @@ class GetProperties:
     
     def save_property_data(self):
 
-        if os.path.exists("~/property_images/")==False:
-            os.makedirs("~/property_images/")
+        if os.path.exists("raw_data/property_data/")==False:
+            os.makedirs("raw_data/property_data/")
 
         for property_number in range(len(self.property_info )):
             property_ID=self.property_info[property_number]["id"]
-            dict_file_name=str("~/property_data/property_" + str(property_ID) + ".pkl")
-            with open(dict_file_name, 'wb+') as f:
-                pickle.dump(self.property_info[property_number], f)
+            dict_file_path=str("raw_data/property_data/property_" + str(property_ID) + ".json")
+            with open(dict_file_path, 'w+') as f:
+                json.dump(self.property_info[property_number], f, sort_keys=True, indent=4)
             
     
 
@@ -208,3 +210,5 @@ property_search=GetProperties('mevagissey',opts)
 
 
 
+
+# %%
