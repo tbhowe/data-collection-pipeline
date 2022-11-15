@@ -23,6 +23,44 @@ import time
 
 
 class GetProperties:
+    '''Collect property listings for a location on Rightmove.co.uk
+        
+    This module runs a property search on rightmove.co.uk, 
+    using the location specified in the "property_area" argument. It collects 
+    data on each property listing in the search results, and downloads the data on each 
+    property into a dictionary, which is writtento a .json file. 
+    The first image on each property page is also saved as a jpeg with filename "property_"+[property_id]+".jpeg".
+
+    Example output:
+
+        {
+        "address": "Harbour Reach, Tregoney Hill, Mevagissey, Cornwall, England, PL26 6RD, United Kingdom",
+        "bathrooms": 2,
+        "bedrooms": 4,
+        "id": 127546982,
+        "image_url": "https://media.rightmove.co.uk/248k/247442/127546982/247442_HSA-13055831_IMG_14_0000.jpeg",
+        "location": {
+            "latitude": 50.270049,
+            "longitude": -4.787646
+        },
+        "price": 450000,
+        "price_history": [
+            {"2015": "210,000"},
+            {"2010": "200,000"}
+        ],
+        "record_timestamp": "Mon Nov 14 14:26:16 2022"
+        }
+   
+    Search options can be supplied in the form of a dictionary, with fields
+    {min_price,max_price,property_type,min_bedrooms}. In the case where no 
+    option is supplied, internal defaults will be used.
+
+
+
+        
+        
+        
+        '''
 
     def __init__(self, property_area,opts=None): 
         # required: property_area (string) - place or postcode of search area
@@ -74,6 +112,7 @@ class GetProperties:
 
     def find_and_fill_webform(self):
         '''Method to fill in the property search form on rightmove.co.uk '''
+
         data_names={'min_price': "minPrice", 
                     "max_price": "maxPrice", 
                     "property_type": "displayPropertyType", 
@@ -87,6 +126,7 @@ class GetProperties:
         
     def return_properties(self):
         '''Method to collect the property listings from the search page on rightmove.co.uk '''
+
         r = requests.get(self.listings_url)
         if r.status_code == 200: # checks request completed successfully
             # This code parses the json on each property page and stores the infromation in a list of dictionaries
@@ -112,12 +152,13 @@ class GetProperties:
         
     def get_expanded_property_data(self):
         '''Method to scrape additional data from the individual propety pages. '''
+
         print( 'properties found: ' + str(len(self.property_info )))
         for property_number in range(len(self.property_info )):
             print('extracting more data for property: '+ str(property_number))
             property_ID=self.property_info[property_number]["id"]
-            # self.accept_cookies()
             self.nav_to_property_page(property_ID)
+            # self.accept_cookies()
             self.get_price_history(property_number)
             self.reverse_geocode_address(property_number)
             self.get_property_images(property_ID,property_number)
@@ -125,6 +166,7 @@ class GetProperties:
     
     def nav_to_property_page(self,property_ID):
         '''Method to navigate to an individual property's url, given its ID '''
+
         self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
@@ -132,6 +174,7 @@ class GetProperties:
     
     def accept_cookies(self):
         '''Method to accept the GFPR cookies on an individual property page '''
+
         delay = 5
         try:
             WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
@@ -152,6 +195,7 @@ class GetProperties:
     
     def get_price_history(self,list_index):
         '''Method to accept the price history from an individual property page '''
+
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
         time.sleep(4)
@@ -170,6 +214,7 @@ class GetProperties:
     
     def reverse_geocode_address(self,property_number):
         '''Method to retrieve postal address from Lat and Long data '''
+
         locator = Nominatim(user_agent='OSM')
         coordinates = str(self.property_info[property_number]["location"]["latitude"]) +','+str(self.property_info[property_number]["location"]["longitude"])
         location = locator.reverse(coordinates)
@@ -177,11 +222,11 @@ class GetProperties:
 
     def get_property_images(self,property_ID,list_index):
         '''Method to retrieve the first image associated with each property listing '''
+        
         self.nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
         time.sleep(2)
         first_image_url=self.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
-        print(first_image_url)
         self.property_info[list_index]['image_url']= first_image_url
         self.property_info[list_index]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
         image_data = requests.get(first_image_url, stream = True)
