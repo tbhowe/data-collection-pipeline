@@ -53,14 +53,8 @@ class GetProperties:
    
     Search options can be supplied in the form of a dictionary, with fields
     {min_price,max_price,property_type,min_bedrooms}. In the case where no 
-    option is supplied, internal defaults will be used.
-
-
-
-        
-        
-        
-        '''
+    option is supplied, internal defaults will be used. 
+    '''
 
     def __init__(self, property_area,opts=None): 
         # required: property_area (string) - place or postcode of search area
@@ -112,7 +106,6 @@ class GetProperties:
 
     def find_and_fill_webform(self):
         '''Method to fill in the property search form on rightmove.co.uk '''
-
         data_names={'min_price': "minPrice", 
                     "max_price": "maxPrice", 
                     "property_type": "displayPropertyType", 
@@ -126,7 +119,6 @@ class GetProperties:
         
     def return_properties(self):
         '''Method to collect the property listings from the search page on rightmove.co.uk '''
-
         r = requests.get(self.listings_url)
         if r.status_code == 200: # checks request completed successfully
             # This code parses the json on each property page and stores the infromation in a list of dictionaries
@@ -152,7 +144,6 @@ class GetProperties:
         
     def get_expanded_property_data(self):
         '''Method to scrape additional data from the individual propety pages. '''
-
         print( 'properties found: ' + str(len(self.property_info )))
         for property_number in range(len(self.property_info )):
             print('extracting more data for property: '+ str(property_number))
@@ -166,7 +157,6 @@ class GetProperties:
     
     def nav_to_property_page(self,property_ID):
         '''Method to navigate to an individual property's url, given its ID '''
-
         self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
@@ -174,7 +164,6 @@ class GetProperties:
     
     def accept_cookies(self):
         '''Method to accept the GFPR cookies on an individual property page '''
-
         delay = 5
         try:
             WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
@@ -195,7 +184,6 @@ class GetProperties:
     
     def get_price_history(self,list_index):
         '''Method to accept the price history from an individual property page '''
-
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
         time.sleep(4)
@@ -205,7 +193,10 @@ class GetProperties:
 
             for row in price_history_table.find_elements(by=By.CSS_SELECTOR, value='tr')[1:]:
                 price_history_element=row.find_elements(by=By.TAG_NAME, value='td')
-                price_history.append({price_history_element[0].text : price_history_element[1].text})
+                price_history_year=price_history_element[0].text
+                price_history_amount=self.cast_price_as_int(str(price_history_element[1].text))
+                price_history.append({price_history_year : price_history_amount})
+                # price_history.append({self.cast_price_as_int(str(price_history_element[0].text) ): self.cast_price_as_int(str(price_history_element[1]).text)})
 
             self.property_info[list_index]['price_history']= price_history
 
@@ -214,7 +205,6 @@ class GetProperties:
     
     def reverse_geocode_address(self,property_number):
         '''Method to retrieve postal address from Lat and Long data '''
-
         locator = Nominatim(user_agent='OSM')
         coordinates = str(self.property_info[property_number]["location"]["latitude"]) +','+str(self.property_info[property_number]["location"]["longitude"])
         location = locator.reverse(coordinates)
@@ -222,7 +212,6 @@ class GetProperties:
 
     def get_property_images(self,property_ID,list_index):
         '''Method to retrieve the first image associated with each property listing '''
-        
         self.nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
         time.sleep(2)
@@ -245,7 +234,6 @@ class GetProperties:
     
     def save_property_data(self):
         '''Method to save the scraped data dictionary for each property as a .json '''
-
         if os.path.exists("raw_data/property_data/")==False:
             os.makedirs("raw_data/property_data/")
 
@@ -255,7 +243,13 @@ class GetProperties:
             with open(dict_file_path, 'w+') as f:
                 json.dump(self.property_info[property_number], f, sort_keys=True, indent=4)
             
-    
+    @staticmethod
+    def cast_price_as_int(string_to_convert):
+        '''Static method to strip non-numerics from a string, and cast as int '''
+        string_to_convert=str(string_to_convert.encode("ascii", "ignore"))
+        string_to_convert=''.join(c for c in string_to_convert if c.isdigit())
+        return(int(string_to_convert))
+
 
 
 # RUN CODE
@@ -267,6 +261,8 @@ opts={'min_price' :'300,000',
     }
     
 property_search=GetProperties('mevagissey',opts)
+
+
 
 
 
