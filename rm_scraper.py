@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 
 import datetime
 import json
@@ -65,7 +66,7 @@ class GetProperties:
         self.opts={'min_price' :'200,000', 
                 'max_price' : '700,000',
                 'property_type' : 'Houses',
-                'min_bedrooms' : 2,
+                'min_bedrooms' : '2',
                 }
         accepted_opts=list(self.opts.keys())
         if opts:
@@ -82,6 +83,8 @@ class GetProperties:
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
+        
+
         if __name__ == "__main__" :
             
             self.get_search_page()
@@ -93,7 +96,12 @@ class GetProperties:
 
     def get_search_page(self):
         '''Method to open the search page on rightmove.co.uk '''
-        self.driver = webdriver.Chrome()
+
+        #TODO - make driver headless!
+        chrome_options = Options()
+        # chrome_options.add_argument("--headless")
+        
+        self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.get(self.base_url)
         time.sleep(1)
         # finds the inputfield on the front page
@@ -101,10 +109,10 @@ class GetProperties:
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
         # finds the inputfields - TIDY THIS INTO LOOP when sorted
-        self.find_and_fill_webform()
+        self.__find_and_fill_webform()
         self.listings_url=self.driver.current_url
 
-    def find_and_fill_webform(self):
+    def __find_and_fill_webform(self):
         '''Method to fill in the property search form on rightmove.co.uk '''
         data_names={'min_price': "minPrice", 
                     "max_price": "maxPrice", 
@@ -154,14 +162,14 @@ class GetProperties:
             self.reverse_geocode_address(property_number)
             self.get_property_images(property_ID,property_number)
 
-    
+    # TODO - make private method
     def nav_to_property_page(self,property_ID):
         '''Method to navigate to an individual property's url, given its ID '''
         self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
 
-    
+    # TODO - make private method
     def accept_cookies(self):
         '''Method to accept the GFPR cookies on an individual property page '''
         delay = 5
@@ -193,7 +201,7 @@ class GetProperties:
 
             for row in price_history_table.find_elements(by=By.CSS_SELECTOR, value='tr')[1:]:
                 price_history_element=row.find_elements(by=By.TAG_NAME, value='td')
-                price_history_year=price_history_element[0].text
+                price_history_year=self.cast_price_as_int(str(price_history_element[0].text))
                 price_history_amount=self.cast_price_as_int(str(price_history_element[1].text))
                 price_history.append({price_history_year : price_history_amount})
                 # price_history.append({self.cast_price_as_int(str(price_history_element[0].text) ): self.cast_price_as_int(str(price_history_element[1]).text)})
