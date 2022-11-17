@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 
 import datetime
 import json
@@ -93,6 +94,8 @@ class GetProperties:
 
     def get_search_page(self):
         '''Method to open the search page on rightmove.co.uk '''
+        chrome_options=Options
+        chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
         time.sleep(1)
