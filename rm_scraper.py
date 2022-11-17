@@ -97,6 +97,7 @@ class GetProperties:
         chrome_options=Options()
         chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(options=chrome_options)
+        # self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
         time.sleep(1)
         # finds the inputfield on the front page
