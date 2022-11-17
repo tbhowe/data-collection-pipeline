@@ -96,7 +96,7 @@ class GetProperties:
         '''Method to open the search page on rightmove.co.uk '''
         chrome_options=Options
         chrome_options.add_argument("--headless")
-        self.driver = webdriver.Chrome()
+        self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.get(self.base_url)
         time.sleep(1)
         # finds the inputfield on the front page
