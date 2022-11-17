@@ -94,7 +94,7 @@ class GetProperties:
 
     def get_search_page(self):
         '''Method to open the search page on rightmove.co.uk '''
-        chrome_options=Options
+        chrome_options=Options()
         chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(options=chrome_options)
         self.driver.get(self.base_url)
