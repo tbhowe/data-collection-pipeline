@@ -83,7 +83,7 @@ class GetProperties:
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
-        
+
 
         if __name__ == "__main__" :
             
@@ -98,13 +98,15 @@ class GetProperties:
         '''Method to open the search page on rightmove.co.uk '''
 
         #TODO - make driver headless!
-        chrome_options = Options()
-        # chrome_options.add_argument("--headless")
+       
         
-        self.driver = webdriver.Chrome(options=chrome_options)
+        self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
         time.sleep(1)
         # finds the inputfield on the front page
+        with open('driversource.txt', 'w+') as f:
+            f.write(self.driver.page_source)
+        
         search_box_path = self.driver.find_element(by=By.XPATH, value='//*[@name="typeAheadInputField"]')
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
