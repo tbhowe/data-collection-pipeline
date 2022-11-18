@@ -83,6 +83,15 @@ class GetProperties:
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
+
+        self.chrome_options = Options()
+        self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("start-maximized")
+        # self.chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36')
+        self.chrome_options.add_argument('no-sandbox')
+        self.chrome_options.add_argument("disable-dev-shm-usage")
+        self.chrome_options.add_argument("--enable-javascript")
+
         if __name__ == "__main__" :
             
             self.get_search_page()
@@ -94,13 +103,14 @@ class GetProperties:
 
     def get_search_page(self):
         '''Method to open the search page on rightmove.co.uk '''
-        chrome_options=Options()
-        chrome_options.add_argument("--headless")
-        self.driver = webdriver.Chrome(options=chrome_options)
+
+        self.driver = webdriver.Chrome(options=self.chrome_options)
         # self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
+        self.accept_cookies()
         time.sleep(1)
         # finds the inputfield on the front page
+        self.driver.get_screenshot_as_file("headless_page.jpg")
         search_box_path = self.driver.find_element(by=By.XPATH, value='//*[@name="typeAheadInputField"]')
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
