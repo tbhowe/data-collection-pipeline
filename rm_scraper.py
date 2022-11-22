@@ -9,7 +9,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
 
 import datetime
 import json
@@ -18,11 +17,7 @@ import requests
 import shutil
 import time
 
-
-
-# import geopy - will need this for a later method.
-
-
+# Define property serarch class:
 class GetProperties:
     '''Collect property listings for a location on Rightmove.co.uk
         
@@ -31,6 +26,10 @@ class GetProperties:
     data on each property listing in the search results, and downloads the data on each 
     property into a dictionary, which is writtento a .json file. 
     The first image on each property page is also saved as a jpeg with filename "property_"+[property_id]+".jpeg".
+
+    inputs:
+    required: property_area (string) - place or postcode of search area
+    optional: opts (dict with elements: min_price, max_price, property_type, min_bedrooms )
 
     Example output:
 
@@ -57,9 +56,8 @@ class GetProperties:
     option is supplied, internal defaults will be used. 
     '''
 
-    def __init__(self, property_area,opts=None): 
-        # required: property_area (string) - place or postcode of search area
-        #optional: opts (dict with elements: min_price, max_price, property_type, min_bedrooms )
+    def __init__(self, property_area: str, opts=None): 
+       
         self.property_area=property_area
         self.property_url_base='https://www.rightmove.co.uk/properties/'
         self.base_url='https://www.rightmove.co.uk/'
@@ -68,6 +66,7 @@ class GetProperties:
                 'property_type' : 'Houses',
                 'min_bedrooms' : '2',
                 }
+
         accepted_opts=list(self.opts.keys())
         if opts:
             for opt in opts:
@@ -83,8 +82,6 @@ class GetProperties:
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
-
-
         if __name__ == "__main__" :
             
             self.get_search_page()
@@ -93,7 +90,7 @@ class GetProperties:
                 print('extracting more data for property: '+ str(property_number))
                 self.get_expanded_property_data(property_number)
 
-            self.save_property_data()
+            self.__save_property_data()
 
         
 
@@ -101,14 +98,10 @@ class GetProperties:
         '''Method to open the search page on rightmove.co.uk '''
         self.driver.get(self.base_url)
         time.sleep(1)
-        # finds the inputfield on the front page
-        with open('driversource.txt', 'w+') as f:
-            f.write(self.driver.page_source)
-        
+        # finds the inputfield on the front page     
         search_box_path = self.driver.find_element(by=By.XPATH, value='//*[@name="typeAheadInputField"]')
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
-        # finds the inputfields - TIDY THIS INTO LOOP when sorted
         self.__find_and_fill_webform()
         self.listings_url=self.driver.current_url
         self.__accept_cookies()
@@ -125,6 +118,24 @@ class GetProperties:
             Select(self.driver.find_element(by=By.XPATH, value="//*[@name='" +data_names[field_element]+"']")).select_by_visible_text(self.opts[field_element])
 
         self.driver.find_element(by=By.XPATH, value='//*[@id="submit"]').click()
+
+    def __accept_cookies(self):
+        '''Method to accept the GFPR cookies on an individual property page '''
+        delay = 5
+        try:
+            WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
+            print("cookiebox Ready!")
+            try:
+                accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]') # finds accept cookies button
+                WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]'))) # wait until clickable
+                self.driver.execute_script("arguments[0].click();", accept_cookies_button)
+                time.sleep(1)
+
+            except NoSuchElementException:
+                print("cookie button not present")
+            
+        except TimeoutException:
+            print("No GDPR cookie box appeared!")
         
     def return_properties(self):
         '''Method to collect the property listings from the search page on rightmove.co.uk '''
@@ -153,7 +164,7 @@ class GetProperties:
 
         
         
-    def get_expanded_property_data(self,property_number):
+    def get_expanded_property_data(self, property_number: int):
         '''Method to scrape additional data from the individual propety pages. '''
         property_ID=self.property_info[property_number]["id"]
         self.__nav_to_property_page(property_ID)
@@ -161,35 +172,12 @@ class GetProperties:
         self.reverse_geocode_address(property_number)
         self.get_property_images(property_ID,property_number)
 
-    # TODO - make private method
-    def __nav_to_property_page(self,property_ID):
+    def __nav_to_property_page(self, property_ID: int):
         '''Method to navigate to an individual property's url, given its ID '''
         self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
-        return()
 
-    
-    def __accept_cookies(self):
-        '''Method to accept the GFPR cookies on an individual property page '''
-        delay = 5
-        try:
-            WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@class="optanon-alert-box-wrapper  "]')))
-            print("cookiebox Ready!")
-            try:
-                accept_cookies_button = self.driver.find_element(by=By.XPATH, value='//button[@title="Allow all cookies"]') # finds accept cookies button
-                WebDriverWait(self.driver, delay).until(EC.element_to_be_clickable((By.XPATH, '//button[@title="Allow all cookies"]'))) # wait until clickable
-                self.driver.execute_script("arguments[0].click();", accept_cookies_button)
-                time.sleep(1)
-
-            except NoSuchElementException:
-                print("cookie button not present")
-            
-        except TimeoutException:
-            print("No GDPR cookie box appeared!")
-    
-    
-    
-    def get_price_history(self,property_number):
+    def get_price_history(self,property_number: int):
         '''Method to accept the price history from an individual property page '''
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
@@ -209,14 +197,14 @@ class GetProperties:
         except NoSuchElementException:
                 print('no sale price history')
     
-    def reverse_geocode_address(self,property_number):
+    def reverse_geocode_address(self,property_number: int):
         '''Method to retrieve postal address from Lat and Long data '''
         locator = Nominatim(user_agent='OSM')
         coordinates = str(self.property_info[property_number]["location"]["latitude"]) +','+str(self.property_info[property_number]["location"]["longitude"])
         location = locator.reverse(coordinates)
         self.property_info[property_number]["address"]=location.address
 
-    def get_property_images(self, property_ID, property_number):
+    def get_property_images(self, property_ID: int, property_number: int):
         '''Method to retrieve the first image associated with each property listing '''
         self.__nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
@@ -238,7 +226,7 @@ class GetProperties:
         else:
             print('Image Couldn\'t be retrieved')
     
-    def save_property_data(self):
+    def __save_property_data(self):
         '''Method to save the scraped data dictionary for each property as a .json '''
         if os.path.exists("raw_data/property_data/")==False:
             os.makedirs("raw_data/property_data/")
@@ -252,7 +240,7 @@ class GetProperties:
         print("properties successfully saved:" + str(len(self.property_info)))
             
     @staticmethod
-    def cast_price_as_int(string_to_convert):
+    def cast_price_as_int(string_to_convert: str):
         '''Static method to strip non-numerics from a string, and cast as int '''
         string_to_convert=str(string_to_convert.encode("ascii", "ignore"))
         string_to_convert=''.join(c for c in string_to_convert if c.isdigit())
