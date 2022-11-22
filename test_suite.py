@@ -45,6 +45,7 @@ class ScraperTestCase(unittest.TestCase):
         self.__wait_and_close()
 
     def test_get_expanded_property_data(self):
+        '''test for the get_expanded_property_data method'''
         test_property_number=3
         self.property_search.property_info = self.example_property_data
         entries_to_remove = ['price_history','address','image_url','record_timestamp']
