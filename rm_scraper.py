@@ -116,6 +116,7 @@ class GetProperties:
         # finds the inputfields - TIDY THIS INTO LOOP when sorted
         self.__find_and_fill_webform()
         self.listings_url=self.driver.current_url
+        self.__accept_cookies()
 
     def __find_and_fill_webform(self):
         '''Method to fill in the property search form on rightmove.co.uk '''
@@ -160,20 +161,20 @@ class GetProperties:
     def get_expanded_property_data(self,property_number):
         '''Method to scrape additional data from the individual propety pages. '''
         property_ID=self.property_info[property_number]["id"]
-        self.nav_to_property_page(property_ID)
+        self.__nav_to_property_page(property_ID)
         self.get_price_history(property_number)
         self.reverse_geocode_address(property_number)
         self.get_property_images(property_ID,property_number)
 
     # TODO - make private method
-    def nav_to_property_page(self,property_ID):
+    def __nav_to_property_page(self,property_ID):
         '''Method to navigate to an individual property's url, given its ID '''
         self.driver.get(self.property_url_base + str(property_ID) )
         print( "navigating to: " + str(self.driver.current_url))
         return()
 
-    # TODO - make private method
-    def accept_cookies(self):
+    
+    def __accept_cookies(self):
         '''Method to accept the GFPR cookies on an individual property page '''
         delay = 5
         try:
@@ -222,7 +223,7 @@ class GetProperties:
 
     def get_property_images(self, property_ID, property_number):
         '''Method to retrieve the first image associated with each property listing '''
-        self.nav_to_property_page(property_ID)
+        self.__nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
         time.sleep(2)
         first_image_url=self.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
