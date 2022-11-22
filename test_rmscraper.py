@@ -43,8 +43,6 @@ class ScraperTestCase(unittest.TestCase):
         time.sleep(3)
 
     def test_get_expanded_property_data(self):
-        self.property_search.get_search_page()
-        # self.property_search.return_properties()
         test_property_number=3
         self.property_search.property_info = self.example_property_data
         print("ID is" + str ( self.property_search.property_info[test_property_number]['id']))
@@ -57,8 +55,10 @@ class ScraperTestCase(unittest.TestCase):
         assert isinstance(self.property_search.property_info[test_property_number]["address"], str) # check reverse geocode produces an address string
         assert isinstance(self.property_search.property_info[test_property_number]['image_url'],str) # check an image url is written to the info dict
         assert self.__url_reachable(self.property_search.property_info[test_property_number]['image_url']) # assert that the image url is reachable
-        # assert os.path.isfile( 'raw_data/property_'+ str(self.property_search.property_info[test_property_number]['id'])+'.jpeg') 
+        assert os.path.isfile( 'raw_data/property_images/property_'+ str(self.property_search.property_info[test_property_number]['id'])+'.jpeg') 
         assert isinstance(self.property_search.property_info[test_property_number]['record_timestamp'],str)
+
+
 
     def test_reverse_geocode_address(self):
         ''' Test that the reverse geocode function returns an address field to the property_info dict, formatted as str'''
