@@ -79,7 +79,7 @@ class GetProperties:
 
             self.opts.update(opts)
 
-        self.driver=None
+        self.driver = webdriver.Chrome()
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
@@ -99,11 +99,6 @@ class GetProperties:
 
     def get_search_page(self):
         '''Method to open the search page on rightmove.co.uk '''
-
-        #TODO - make driver headless!
-       
-        
-        self.driver = webdriver.Chrome()
         self.driver.get(self.base_url)
         time.sleep(1)
         # finds the inputfield on the front page
