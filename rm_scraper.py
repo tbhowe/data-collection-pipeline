@@ -87,7 +87,7 @@ class GetProperties:
         self.chrome_options.add_argument("disable-dev-shm-usage")
         self.chrome_options.add_argument("--enable-javascript")
         self.chrome_options.add_argument("window-size=1920,1080")
-        self.driver = webdriver.Chrome(Options=self.chrome_options)
+        self.driver = webdriver.Chrome(options=self.chrome_options)
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
