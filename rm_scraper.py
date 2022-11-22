@@ -4,6 +4,7 @@ from geopy.geocoders import Nominatim
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver 
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
@@ -78,7 +79,15 @@ class GetProperties:
 
             self.opts.update(opts)
 
-        self.driver = webdriver.Chrome()
+        self.chrome_options = Options()
+        self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("start-maximized")
+        # self.chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36')
+        self.chrome_options.add_argument('no-sandbox')
+        self.chrome_options.add_argument("disable-dev-shm-usage")
+        self.chrome_options.add_argument("--enable-javascript")
+        self.chrome_options.add_argument("window-size=1920,1080")
+        self.driver = webdriver.Chrome(Options=self.chrome_options)
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
@@ -98,7 +107,8 @@ class GetProperties:
         '''Method to open the search page on rightmove.co.uk '''
         self.driver.get(self.base_url)
         time.sleep(1)
-        # finds the inputfield on the front page     
+        # finds the inputfield on the front page  
+        self.__headless_save() 
         search_box_path = self.driver.find_element(by=By.XPATH, value='//*[@name="typeAheadInputField"]')
         search_box_path.send_keys(self.property_area)
         search_box_path.send_keys(Keys.ENTER)
@@ -238,6 +248,12 @@ class GetProperties:
                 json.dump(self.property_info[property_number], f, sort_keys=True, indent=4)
         
         print("properties successfully saved:" + str(len(self.property_info)))
+
+    def __headless_save(self):
+        with open('page_source_dump.txt', 'w+') as f:
+            f.write(self.driver.page_source)
+        self.driver.get_screenshot_as_file('screendump.jpeg')
+
             
     @staticmethod
     def cast_price_as_int(string_to_convert: str):
@@ -245,6 +261,8 @@ class GetProperties:
         string_to_convert=str(string_to_convert.encode("ascii", "ignore"))
         string_to_convert=''.join(c for c in string_to_convert if c.isdigit())
         return(int(string_to_convert))
+
+
 
 
 
