@@ -24,8 +24,9 @@ class ScraperTestCase(unittest.TestCase):
         time.sleep(3)
 
     def test_return_properties(self):
-        self.property_search.get_search_page()
+        self.property_search.listings_url='https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E17104&insId=1&radius=0.0&minPrice=200000&maxPrice=700000&minBedrooms=2&maxBedrooms=&displayPropertyType=houses&maxDaysSinceAdded=&_includeSSTC=on&sortByPriceDescending=&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&newHome=&auction=false'
         self.property_search.property_info=[]
+        assert self.__url_reachable(self.property_search.listings_url)
         assert not self.property_search.property_info
         self.property_search.return_properties()
         assert isinstance(self.property_search.property_info,list)
@@ -35,7 +36,9 @@ class ScraperTestCase(unittest.TestCase):
         assert isinstance(self.property_search.property_info[0]['price'],int)
         time.sleep(3)
 
-
+    def test_get_expanded_property_data(self):
+        self.property_search.get_search_page()
+        pass
 
     def test_reverse_geocode_address(self):
         ''' Test that the reverse geocode function returns an address field to the property_info dict, formatted as str'''
@@ -48,6 +51,9 @@ class ScraperTestCase(unittest.TestCase):
         # print(self.property_search.property_info)
         assert 'address' in self.property_search.property_info[0]
         assert isinstance(self.property_search.property_info[0]["address"], str)
+
+    
+
 
     
 
