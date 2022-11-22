@@ -20,6 +20,7 @@ import time
 
 
 
+
 # import geopy - will need this for a later method.
 
 
@@ -90,7 +91,9 @@ class GetProperties:
             self.get_search_page()
             self.return_properties()
             self.get_expanded_property_data()
-            self.save_property_data()
+            self.__save_property_data()
+            
+            
 
         
 
@@ -159,6 +162,7 @@ class GetProperties:
             self.get_price_history(property_number)
             self.reverse_geocode_address(property_number)
             self.get_property_images(property_ID,property_number)
+            self.__record_timestamp(property_number)
 
     def __nav_to_property_page(self,property_ID):
         '''Method to navigate to an individual property's url, given its ID '''
@@ -222,7 +226,6 @@ class GetProperties:
         time.sleep(2)
         first_image_url=self.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
         self.property_info[list_index]['image_url']= first_image_url
-        self.property_info[list_index]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
         image_data = requests.get(first_image_url, stream = True)
         if os.path.exists("raw_data/property_images/")==False:
             os.makedirs("raw_data/property_images/")
@@ -236,8 +239,11 @@ class GetProperties:
 
         else:
             print('Image Couldn\'t be retrieved')
+
+    def __record_timestamp(self,list_index):
+        self.property_info[list_index]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
     
-    def save_property_data(self):
+    def __save_property_data(self):
         '''Method to save the scraped data dictionary for each property as a .json '''
         if os.path.exists("raw_data/property_data/")==False:
             os.makedirs("raw_data/property_data/")
