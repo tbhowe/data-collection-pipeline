@@ -30,11 +30,12 @@ class ScraperTestCase(unittest.TestCase):
         time.sleep(3)
 
     def test_return_properties(self):
-        # ISSUE: How to make this into a unit test not an integration test?
+        # TODO: How to make this into a unit test not an integration test?
         self.property_search.get_search_page()
         self.property_search.property_info=[]
         assert not self.property_search.property_info
         self.property_search.return_properties()
+
         assert isinstance(self.property_search.property_info,list)
         assert isinstance(self.property_search.property_info[0],dict)
         assert isinstance(self.property_search.property_info[0]['id'],int)
@@ -45,12 +46,12 @@ class ScraperTestCase(unittest.TestCase):
     def test_get_expanded_property_data(self):
         test_property_number=3
         self.property_search.property_info = self.example_property_data
-        print("ID is" + str ( self.property_search.property_info[test_property_number]['id']))
         entries_to_remove = ['price_history','address','image_url','record_timestamp']
         self.__remove_entries_from_dict(entries_to_remove,self.property_search.property_info)
-        print(self.property_search.property_info[test_property_number].keys())
         self.property_search.get_expanded_property_data(test_property_number)
+
         assert 'price_history' in self.property_search.property_info[test_property_number] # is price history returned as a dict?
+        assert isinstance(self.property_search.property_info[test_property_number]["price_history"], dict)
         assert 'address' in self.property_search.property_info[test_property_number] # check reverse geocode occurs
         assert isinstance(self.property_search.property_info[test_property_number]["address"], str) # check reverse geocode produces an address string
         assert isinstance(self.property_search.property_info[test_property_number]['image_url'],str) # check an image url is written to the info dict
@@ -58,7 +59,17 @@ class ScraperTestCase(unittest.TestCase):
         assert os.path.isfile( 'raw_data/property_images/property_'+ str(self.property_search.property_info[test_property_number]['id'])+'.jpeg') 
         assert isinstance(self.property_search.property_info[test_property_number]['record_timestamp'],str)
 
+    def test_get_price_history(self):
+        '''Test that the get_price_history method returns a dict'''
+        test_property_number=3
+        self.property_search.property_info = self.example_property_data
+        print("ID is" + str ( self.property_search.property_info[test_property_number]['id']))
+        entries_to_remove = ["price_history"]
+        self.__remove_entries_from_dict(entries_to_remove,self.property_search.property_info)
+        self.get_price_history(self,test_property_number)
 
+        assert 'price_history' in self.property_search.property_info[test_property_number]
+        assert isinstance(self.property_search.property_info[test_property_number]["price_history"], dict)
 
     def test_reverse_geocode_address(self):
         ''' Test that the reverse geocode function returns an address field to the property_info dict, formatted as str'''
@@ -68,7 +79,7 @@ class ScraperTestCase(unittest.TestCase):
         },}]
         property_number=0
         self.property_search.reverse_geocode_address(property_number)
-        # print(self.property_search.property_info)
+       
         assert 'address' in self.property_search.property_info[0]
         assert isinstance(self.property_search.property_info[0]["address"], str)
 
