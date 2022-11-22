@@ -89,7 +89,10 @@ class GetProperties:
             
             self.get_search_page()
             self.return_properties()
-            self.get_expanded_property_data()
+            for property_number in range(len(self.property_info )):
+                print('extracting more data for property: '+ str(property_number))
+                self.get_expanded_property_data(property_number)
+
             self.save_property_data()
 
         
@@ -150,19 +153,17 @@ class GetProperties:
                 properties_dict.append({ "id" : id, "price" : price , "bedrooms" : bedrooms, "bathrooms" : bathrooms, "location" : location})
 
             self.property_info=properties_dict
+            print( 'properties found: ' + str(len(self.property_info )))
 
         
-    def get_expanded_property_data(self):
+        
+    def get_expanded_property_data(self,property_number):
         '''Method to scrape additional data from the individual propety pages. '''
-        print( 'properties found: ' + str(len(self.property_info )))
-        for property_number in range(len(self.property_info )):
-            print('extracting more data for property: '+ str(property_number))
-            property_ID=self.property_info[property_number]["id"]
-            self.nav_to_property_page(property_ID)
-            # self.accept_cookies()
-            self.get_price_history(property_number)
-            self.reverse_geocode_address(property_number)
-            self.get_property_images(property_ID,property_number)
+        property_ID=self.property_info[property_number]["id"]
+        self.nav_to_property_page(property_ID)
+        self.get_price_history(property_number)
+        self.reverse_geocode_address(property_number)
+        self.get_property_images(property_ID,property_number)
 
     # TODO - make private method
     def nav_to_property_page(self,property_ID):
@@ -192,7 +193,7 @@ class GetProperties:
     
     
     
-    def get_price_history(self,list_index):
+    def get_price_history(self,property_number):
         '''Method to accept the price history from an individual property page '''
         price_history_button=self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/div[2]/div/div[14]/button')
         price_history_button.click()
@@ -207,8 +208,7 @@ class GetProperties:
                 price_history_amount=self.cast_price_as_int(str(price_history_element[1].text))
                 price_history.append({price_history_year : price_history_amount})
                 # price_history.append({self.cast_price_as_int(str(price_history_element[0].text) ): self.cast_price_as_int(str(price_history_element[1]).text)})
-
-            self.property_info[list_index]['price_history']= price_history
+            self.property_info[property_number]['price_history']= price_history
 
         except NoSuchElementException:
                 print('no sale price history')
@@ -220,14 +220,14 @@ class GetProperties:
         location = locator.reverse(coordinates)
         self.property_info[property_number]["address"]=location.address
 
-    def get_property_images(self,property_ID,list_index):
+    def get_property_images(self, property_ID, property_number):
         '''Method to retrieve the first image associated with each property listing '''
         self.nav_to_property_page(property_ID)
         self.driver.find_element(by=By.XPATH, value='//*[@id="root"]/main/div/article/div/div[1]/div[1]/section').click()
         time.sleep(2)
         first_image_url=self.driver.find_element(by=By.XPATH, value='//img').get_attribute("src")
-        self.property_info[list_index]['image_url']= first_image_url
-        self.property_info[list_index]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
+        self.property_info[property_number]['image_url']= first_image_url
+        self.property_info[property_number]['record_timestamp']=datetime.datetime.fromtimestamp(time.time()).strftime('%c')
         image_data = requests.get(first_image_url, stream = True)
         if os.path.exists("raw_data/property_images/")==False:
             os.makedirs("raw_data/property_images/")
@@ -252,6 +252,8 @@ class GetProperties:
             dict_file_path=str("raw_data/property_data/property_" + str(property_ID) + ".json")
             with open(dict_file_path, 'w+') as f:
                 json.dump(self.property_info[property_number], f, sort_keys=True, indent=4)
+        
+        print("properties successfully saved:" + str(len(self.property_info)))
             
     @staticmethod
     def cast_price_as_int(string_to_convert):
