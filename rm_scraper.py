@@ -1,5 +1,7 @@
 #%%
 # import libraries
+
+
 from geopy.geocoders import Nominatim
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
@@ -10,6 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 
 import datetime
 import json
@@ -78,7 +81,7 @@ class GetProperties:
                     raise ValueError(f"Invalid Option: {opt}")
 
             self.opts.update(opts)
-
+        print('test output')
         self.chrome_options = Options()
         self.chrome_options.add_argument("--headless")
         self.chrome_options.add_argument("start-maximized")
@@ -87,7 +90,8 @@ class GetProperties:
         self.chrome_options.add_argument("disable-dev-shm-usage")
         self.chrome_options.add_argument("--enable-javascript")
         self.chrome_options.add_argument("window-size=1920,1080")
-        self.driver =webdriver.Remote('http://127.0.0.1:4444/wd/hub', options=self.chrome_options)
+        # self.driver =webdriver.Remote('http://127.0.0.1:4444/wd/hub', options=self.chrome_options)
+        self.driver =webdriver.Chrome(ChromeDriverManager().install(), options=self.chrome_options)
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
