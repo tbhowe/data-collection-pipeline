@@ -4,7 +4,7 @@ from geopy.geocoders import Nominatim
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from selenium import webdriver 
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
@@ -91,7 +91,7 @@ class GetProperties:
         self.chrome_options.add_argument("--disable-dev-shm-usage")
         self.chrome_options.add_argument("--enable-javascript")
         self.chrome_options.add_argument("--window-size=1920,1080")
-        self.driver = webdriver.Chrome(options=self.chrome_options)
+        self.driver = webdriver.Firefox(options=self.chrome_options)
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
