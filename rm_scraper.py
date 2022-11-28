@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 
 import datetime
 import json
@@ -91,7 +92,7 @@ class GetProperties:
         self.chrome_options.add_argument("--disable-dev-shm-usage")
         self.chrome_options.add_argument("--enable-javascript")
         self.chrome_options.add_argument("--window-size=1920,1080")
-        self.driver = webdriver.Chrome(options=self.chrome_options)
+        self.driver =webdriver.Chrome(ChromeDriverManager().install(), options=self.chrome_options)
         self.listings_url=None
         self.property_ids=None
         self.property_info=None
