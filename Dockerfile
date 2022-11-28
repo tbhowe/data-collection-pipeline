@@ -14,3 +14,4 @@ RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 RUN pip install -r requirements.txt
 
 ENTRYPOINT ["python", "rm_scraper.py"]
+CMD tail -f /dev/null
